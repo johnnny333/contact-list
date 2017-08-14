@@ -1,7 +1,7 @@
 import React from 'react';
 import {ContactItem} from './ContactItem.js';
 import {ContactForm} from './form/ContactForm.js';
-import { Panel,Grid, Row, Col, ListGroup, Button, Glyphicon, Pagination } from 'react-bootstrap';
+import { Panel,Grid, Row, Col, ListGroup, Pagination } from 'react-bootstrap';
 
 export class ContactsList extends React.Component {
 
@@ -32,13 +32,9 @@ export class ContactsList extends React.Component {
 
   updateContact = (contact) => {
 
-    this.state.contacts[contact.index].contact = contact;
-    this.setState ( (prevState) => ({
-
-      contacts: [...this.state.contacts ]
-
-    }), () => {this.setLocalStorage()}
-    )
+    const contacts = [...this.state.contacts];
+    contacts[contact.index].contact = contact;
+    this.setState({contacts}, this.setLocalStorage() )
   }
 
   setLocalStorage = () => {
@@ -71,7 +67,7 @@ export class ContactsList extends React.Component {
 
   componentDidUpdate(prevProps, prevState){
 
-    //Watch for situation when user delete list item in a page > 1.
+    //Watch for situation when user delete last item in a page > 1.
     // If this occurs, decrement activa page field state.
     if((this.state.contacts.length <= (this.state.activePage - 1) * 10) && this.state.activePage > 1){
         this.setState((prevState) => {
@@ -89,7 +85,6 @@ export class ContactsList extends React.Component {
 
         <Grid>
           <Row className="show-grid">
-          {this.state.contacts.length}
             <Panel>
               <Col xs={12} md={8}>
                 <ListGroup>

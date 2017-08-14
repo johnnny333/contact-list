@@ -1,26 +1,33 @@
 import React from 'react';
-import { Form, FormGroup, ControlLabel, FormControl,  HelpBlock, Button } from 'react-bootstrap';
+import { FormGroup, ControlLabel, FormControl,  HelpBlock, Button } from 'react-bootstrap';
+import './ContactForm.css';
+import ops from 'immutable-ops';
+
+const initialState = {
+  email: '',
+  telephone: '',
+  name: '',
+  surname: '',
+  formErrors: {
+    email: '', telephone: '', name: '', surname: ''
+  },
+  valids: {
+    emailValid: false, telephoneValid: false, nameValid: false,
+    surnameValid: false, formValid: false,
+  },
+  contact: {}
+}
 
 export class ContactForm extends React.Component {
 
   constructor(props) {
     super();
-
-    this.state =  {
-      email: '',
-      telephone: '',
-      name: '',
-      surname: '',
-      formErrors: {
-        email: '', telephone: '', name: '', surname: ''
-      },
-      valids: {
-        emailValid: false, telephoneValid: false, nameValid: false,
-        surnameValid: false, formValid: false,
-      },
-      contact: {}
-    };
+    this.state = {...initialState};
   }
+
+  resetForm() {
+       this.setState({...initialState});
+    }
 
   //Assign edited contact values
   componentWillReceiveProps(nextProps) {
@@ -34,9 +41,9 @@ export class ContactForm extends React.Component {
       nextProps.removeEditContact()
 
       if(contactEdit.toRemoved){
-        this.resetValids();
+        this.resetForm();
       } else {
-        this.resetValids(contactEdit,true);
+        this.setContactEdit(contactEdit,true);
       }
 
     }
@@ -44,45 +51,35 @@ export class ContactForm extends React.Component {
 
   //Sets form fields to either show edited contact
   // or clean them fields
-  resetValids = (contactEdit, value) => {
+  setContactEdit = (contactEdit, value) => {
 
-    let {valids} = this.state, state = this.state;
+    let valids = {...this.state.valids};
 
-    if(contactEdit === undefined) {
-      for (let key in state) {
-        if (state.hasOwnProperty(key) && typeof state[key] !== 'object' ) {
-          state[key] = '';
-        }
-      }
-    }
-
+    //Edited contact need to have those set to true to able edit btn
     for (let keyValid in valids) {
       if (valids.hasOwnProperty(keyValid)) {
         valids[keyValid] = value;
       }
     }
 
-    let fields = contactEdit === undefined ? state : contactEdit;
-
     this.setState((prevState) => (
-      {...fields, valids }
+      {...contactEdit, valids }
       )
     )
-
-    if(contactEdit === undefined){
-        this.setState({contact:{}})
-    }
-
   }
 
   handleUserInput = (e) => {
-    const name = e.target.name, value = e.target.value, type = e.target.type;
-    this.setState({[name]: value}, () => { this.validateField(name, value, type) });
+    const {name, type} = e.target,
+    value = e.target.value.trim();
+
+    this.setState({
+      [name]: value}, () => { this.validateField(name, value, type) }
+    );
   }
 
   validateField(fieldName, value, type) {
-    let fieldValidationErrors = this.state.formErrors,
-    fieldValids = this.state.valids,
+
+    let {formErrors,valids} = {...this.state},
     isValid, hint;
 
     switch(type) {
@@ -93,25 +90,27 @@ export class ContactForm extends React.Component {
         break
 
       case 'email':
-        isValid = value.match(/^([\w.%+-]+)@([\w-]+\.)+([\w]{2,})$/i);
+        isValid = /^([\w.%+-]+)@([\w-]+\.)+([\w]{2,})$/i.test(value);
         hint = isValid ? '' : 'Provide legitimate email';
         break;
 
       case 'tel':
-        isValid = value.length >= 9 && value.match(/^\d+$/);
-        hint = isValid ? '': ' Must be at least 9 numbers long';
+        isValid = /^\d{7,11}$/.test(value);
+        hint = isValid ? '': ' Must be at least 7 numbers long to 11 numbers most';
         break;
 
       default:
         break;
     }
 
+    //Keep js objects immutable with https://github.com/tommikaikkonen/immutable-ops
+    valids = ops.setIn([fieldName + 'Valid'], isValid, valids);
+    formErrors = ops.setIn([fieldName], hint, formErrors);
+
     this.setState((prevState) => ({
-      fieldValids: Object.assign({}, prevState.valids, fieldValids[fieldName  + "Valid"] = isValid ) ,
-      fieldValidationErrors: Object.assign({}, prevState.formErrors,fieldValidationErrors[fieldName] = hint)
+      valids , formErrors
     }), () => {this.validateForm()}
     )
-
   }
 
   validateForm = () => {
@@ -148,7 +147,8 @@ export class ContactForm extends React.Component {
       index: state.contact.index
     }
 
-    this.resetValids();
+    this.resetForm();
+
     if(this.state.contact.email){
         this.props.updateContact(contact);
     } else{
@@ -217,7 +217,7 @@ export class ContactForm extends React.Component {
               disabled={!this.state.valids.formValid}>
                 {this.state.contact.email ? "Update Contact" : "Add Contact" }
             </Button>
-           <Button type="submit" onClick={ () => this.resetValids() }  >Dissmiss</Button>
+           <Button type="submit" onClick={ () => this.resetForm() }  >Dissmiss</Button>
        </div>
      )
   }
