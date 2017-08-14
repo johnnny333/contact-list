@@ -64,7 +64,6 @@ export class ContactsList extends React.Component {
   }
 
   handleSelect = (eventKey) => {
-    console.log(eventKey);
     this.setState({
       activePage: eventKey
     });
@@ -75,13 +74,10 @@ export class ContactsList extends React.Component {
     //Watch for situation when user delete list item in a page > 1.
     // If this occurs, decrement activa page field state.
     if((this.state.contacts.length <= (this.state.activePage - 1) * 10) && this.state.activePage > 1){
-        console.log("in render");
-
         this.setState((prevState) => {
           return {activePage: prevState.activePage - 1};
         });
     }
-
   }
 
   render() {
